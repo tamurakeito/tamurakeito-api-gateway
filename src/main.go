@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/tamurakeito/tamurakeito-api-gateway/src/infrastructure"
+	"github.com/tamurakeito/tamurakeito-api-gateway/src/presentation"
 	"github.com/tamurakeito/tamurakeito-api-gateway/src/usecase"
 )
 
@@ -15,10 +16,10 @@ func main() {
 
 	// リポジトリのインスタンスを生成
 	repo := infrastructure.NewMySQLProxyConfigRepository(*sqlHandler)
-	service := usecase.NewProxyUsecase(repo)
 
 	// サービスを使用してプロキシの設定
-	service.SetupProxies()
+	service := usecase.NewProxyUsecase(repo)
+	presentation.RegisterProxies(service)
 
 	log.Println("Starting server on :80")
 	log.Fatal(http.ListenAndServe(":80", nil))
