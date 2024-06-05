@@ -21,11 +21,13 @@ func RegisterProxies(proxyUsecase usecase.ProxyUsecase) {
 		log.Fatal(err) // 本番環境では適切なエラーハンドリングを行う
 	}
 	for _, config := range configs {
-		setupProxy(config)
+		proxyHandler := setupProxy(config)
+		corsHandler := CORSMiddleware(proxyHandler)
+		http.Handle(config.Path, corsHandler)
 	}
 }
 
-func setupProxy(config domain.ProxyConfig) {
+func setupProxy(config domain.ProxyConfig) http.HandlerFunc {
 	targetURL, err := url.Parse(config.Target)
 	if err != nil {
 		log.Fatal(err)
@@ -38,7 +40,9 @@ func setupProxy(config domain.ProxyConfig) {
 		req.URL.Path = utils.SingleJoiningSlash(targetURL.Path, strings.TrimPrefix(req.URL.Path, config.Path))
 	}
 
-	http.HandleFunc(config.Path, func(w http.ResponseWriter, r *http.Request) {
+	proxyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		proxy.ServeHTTP(w, r)
 	})
+
+	return proxyHandler
 }
